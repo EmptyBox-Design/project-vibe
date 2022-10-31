@@ -9,8 +9,13 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
+import { useMainStore } from "../store/main";
+const store = useMainStore();
+
 // GLOBALS
 let map = null;
+// map hover
+let hoverID = null;
 // SELECTED COORDS FROM GEOCODER
 let selectedCoords = [];
 // MARKER CONTAINER
@@ -23,7 +28,7 @@ let selectedLocationMarker = {};
 function flyTo(coords) {
   map.flyTo({
     center: coords,
-    zoom: 12,
+    zoom: 15,
     speed: 1,
     curve: 1.2,
     easing(t) {
@@ -48,6 +53,12 @@ function removeMapMarker() {
   selectedLocationMarker.remove();
 }
 
+async function addLotsByRadius(coords) {
+  const [lat, lng] = coords;
+  const lots = await store.getPlutoLotsByPointRadius(lat, lng, 200);
+  map.getSource("lot-source").setData(lots);
+}
+
 function addGeocoder() {
   const geocoder = new MapboxGeocoder({
     accessToken: import.meta.env.VITE_MAPBOX_API_TOKEN,
@@ -59,8 +70,9 @@ function addGeocoder() {
    */
   geocoder.on("result", (event) => {
     selectedCoords = event.result.center;
-    // filterByRadius(selectedCoords, searchRadius);
+
     addMapMarker(selectedCoords);
+    addLotsByRadius(selectedCoords);
     flyTo(selectedCoords);
   });
   geocoder.on("clear", () => {
@@ -75,6 +87,61 @@ function addGeocoder() {
   geocoder.addTo("#search-container");
 }
 
+function addLotLayer() {
+  map.addSource("lot-source", {
+    type: "geojson",
+    generateId: true,
+    data: {
+      type: "FeatureCollection",
+      features: [],
+    },
+  });
+
+  map.addLayer({
+    id: "lots",
+    type: "fill",
+    source: "lot-source",
+    paint: {
+      "fill-color": "#0080ff",
+      "fill-opacity": [
+        "case",
+        ["boolean", ["feature-state", "hover"], false],
+        1,
+        0.5,
+      ],
+    },
+  });
+
+  // POLYGON MOUSE OVER LISTENER
+  map.on("mousemove", "lots", (e) => {
+    if (e.features.length > 0) {
+      if (hoverID !== null) {
+        map.setFeatureState(
+          { source: "lot-source", id: hoverID },
+          { hover: false }
+        );
+      }
+
+      hoverID = e.features[0].id;
+
+      map.setFeatureState(
+        { source: "lot-source", id: hoverID },
+        { hover: true }
+      );
+    }
+  });
+
+  // POLYGON MOUSE LEAVE LISTENER
+  map.on("mouseleave", "lots", () => {
+    if (hoverID !== null) {
+      map.setFeatureState(
+        { source: "lot-source", id: hoverID },
+        { hover: false }
+      );
+    }
+    hoverID = null;
+  });
+}
 /**
  * MOUNTED
  */
@@ -88,13 +155,7 @@ onMounted(() => {
   });
   map.on("load", () => {
     addGeocoder();
-    /**
-     * TODO:
-     *
-     * Add pluto dataset
-     *
-     * Add polygon listener
-     */
+    addLotLayer();
   });
 });
 </script>

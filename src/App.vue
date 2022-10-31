@@ -1,6 +1,5 @@
 <script setup>
-import Home from "./components/Home.vue"
-
+import Home from "./components/Home.vue";
 </script>
 
 <template>
@@ -8,6 +7,11 @@ import Home from "./components/Home.vue"
 </template>
 
 <style>
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
 #app {
   height: 100vh;
   width: 100vw;

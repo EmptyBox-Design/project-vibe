@@ -9,7 +9,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
-import cityDataSource from "../data/sourceData2.json";
+import cityDataSource from "../data/sourceData-light.json";
 
 // GLOBALS
 let map = null;
@@ -90,17 +90,11 @@ onMounted(() => {
   });
   map.on("load", () => {
     addGeocoder();
-    /**
-     * TODO:
-     *
-     * Add pluto dataset
-     *
-     * Add polygon listener
-     */
     map.addSource("cityData", {
+      // map.setSource("cityData", {
       type: "geojson",
       // Point to GeoJSON data. This example visualizes all M1.0+ earthquakes
-      // from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
+      // from 12  /22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
       data: cityDataSource,
       // cluster: true,
       // clusterMaxZoom: 14, // Max zoom to cluster points on
@@ -143,6 +137,43 @@ onMounted(() => {
         },
       },
     });
+    // POPUP
+    // Create a popup, but don't add it to the map yet.
+    // const popup = new mapboxgl.Popup({
+    //   closeButton: false,
+    //   closeOnClick: false,
+    // });
+    // When a click event occurs on a feature in the places layer, open a popup at the
+    // location of the feature, with description HTML from its properties.
+    map.on("click", "businesses", (e) => {
+      // Copy coordinates array.
+      const coordinates = e.features[0].geometry.coordinates.slice();
+      const descriptionRoot = e.features[0];
+      const description =
+        "Name: " + descriptionRoot["properties"]["Business Name"];
+
+      // Ensure that if the map is zoomed out such that multiple
+      // copies of the feature are visible, the popup appears
+      // over the copy being pointed to.
+      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+      }
+
+      new mapboxgl.Popup()
+        .setLngLat(coordinates)
+        .setHTML(description)
+        .addTo(map);
+    });
+
+    // Change the cursor to a pointer when the mouse is over the places layer.
+    map.on("mouseenter", "places", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+
+    // Change it back to a pointer when it leaves.
+    map.on("mouseleave", "places", () => {
+      map.getCanvas().style.cursor = "";
+    });
   });
 });
 </script>
@@ -177,5 +208,12 @@ onMounted(() => {
 }
 .mapboxgl-ctrl-geocoder--icon {
   top: -1px;
+}
+.mapboxgl-popup {
+  max-width: 400px;
+  font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+.mapboxgl-popup-content {
+  color: black !important;
 }
 </style>

@@ -9,6 +9,11 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
+import pointsWithinPolygon from "@turf/points-within-polygon";
+
+import { useMainStore } from "../store/main";
+const store = useMainStore();
+
 // GLOBALS
 let map = null;
 // SELECTED COORDS FROM GEOCODER
@@ -23,14 +28,41 @@ let selectedLocationMarker = {};
 function flyTo(coords) {
   map.flyTo({
     center: coords,
-    zoom: 12,
-    speed: 1,
+    zoom: 15,
+    speed: 0.8,
     curve: 1.2,
     easing(t) {
       return t;
     },
   });
 }
+
+function getPointsWithinPolygon() {
+  var points = turf.points([
+    [-46.6318, -23.5523],
+    [-46.6246, -23.5325],
+    [-46.6062, -23.5513],
+    [-46.663, -23.554],
+    [-46.643, -23.557],
+  ]);
+
+  var searchWithin = turf.polygon([
+    [
+      [-46.653, -23.543],
+      [-46.634, -23.5346],
+      [-46.613, -23.543],
+      [-46.614, -23.559],
+      [-46.631, -23.567],
+      [-46.653, -23.56],
+      [-46.653, -23.543],
+    ],
+  ]);
+
+  const ptsWithin = pointsWithinPolygon(points, searchWithin);
+  console.log("ptsWithin", ptsWithin);
+}
+
+getPointsWithinPolygon();
 
 /**
  * Adds Map marker to the map given set of coordinates
@@ -58,8 +90,11 @@ function addGeocoder() {
    * GEOCODER EVENT HANDLERS
    */
   geocoder.on("result", (event) => {
+    if (selectedCoords.length > 0) {
+      resetMapFilter();
+      removeMapMarker();
+    }
     selectedCoords = event.result.center;
-    // filterByRadius(selectedCoords, searchRadius);
     addMapMarker(selectedCoords);
     flyTo(selectedCoords);
   });
@@ -88,13 +123,6 @@ onMounted(() => {
   });
   map.on("load", () => {
     addGeocoder();
-    /**
-     * TODO:
-     *
-     * Add pluto dataset
-     *
-     * Add polygon listener
-     */
   });
 });
 </script>

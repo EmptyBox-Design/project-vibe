@@ -149,10 +149,11 @@ onMounted(() => {
     addGeocoder();
     map.addSource("cityData", {
       type: "geojson",
-      data: {
-        type: "FeatureCollection",
-        features: [],
-      },
+      // data: {
+      //   type: "FeatureCollection",
+      //   features: [],
+      // },
+      data: cityDataSource,
     });
     map.addLayer({
       id: "businesses",
@@ -167,8 +168,12 @@ onMounted(() => {
     map.on("click", "businesses", (e) => {
       // Copy coordinates array.
       const coordinates = e.features[0].geometry.coordinates.slice();
-      const descriptionRoot = e.features[0];
-      const businessName = `<h1>${descriptionRoot["properties"]["Business Name"]}</h1>`;
+      const descriptionRoot = e.features[0]["properties"];
+      const businessName = `<h1><b>${descriptionRoot["Business Name"]}</b></h1>`;
+      const businessName2 = descriptionRoot["Business Name 2"]
+        ? `<h1>${descriptionRoot["Business Name 2"]}</h1>`
+        : "";
+      const businessContact = `<span>📞 ${descriptionRoot["Contact Phone Number"]}</span>`;
       // Ensure that if the map is zoomed out such that multiple
       // copies of the feature are visible, the popup appears
       // over the copy being pointed to.
@@ -177,7 +182,8 @@ onMounted(() => {
       }
       new mapboxgl.Popup()
         .setLngLat(coordinates)
-        .setHTML(description)
+        // .setHTML(businessName + businessName2 + businessContact)
+        .setHTML(businessName + businessName2 + businessContact)
         .addTo(map);
     });
     // Change the cursor to a pointer when the mouse is over the places layer.
@@ -194,7 +200,6 @@ onMounted(() => {
 
 <template>
   <div id="map" class="absolute h-screen top-0 overflow-hidden"></div>
-
   <!-- Search Bar -->
   <div
     class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px]"
@@ -224,7 +229,8 @@ onMounted(() => {
   top: -1px;
 }
 .mapboxgl-popup {
-  max-width: 400px;
+  max-width: 500px;
+  margin: 10px;
   font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
 }
 .mapboxgl-popup-content {

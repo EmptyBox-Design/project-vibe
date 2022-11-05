@@ -11,6 +11,8 @@ import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
 import pointsWithinPolygon from "@turf/points-within-polygon";
 
+import * as turf from "@turf/turf";
+
 import { useMainStore } from "../store/main";
 const store = useMainStore();
 
@@ -37,32 +39,20 @@ function flyTo(coords) {
   });
 }
 
-function getPointsWithinPolygon() {
-  var points = turf.points([
-    [-46.6318, -23.5523],
-    [-46.6246, -23.5325],
-    [-46.6062, -23.5513],
-    [-46.663, -23.554],
-    [-46.643, -23.557],
-  ]);
+/**
+ * Takes a polygon
+ * @param {Array} pts coordinate array of points to search
+ * @param {Array} search coordinate array of polygon to search within
+ */
+function getPointsWithinPolygon(pts, search) {
+  var points = turf.points(pts);
 
-  var searchWithin = turf.polygon([
-    [
-      [-46.653, -23.543],
-      [-46.634, -23.5346],
-      [-46.613, -23.543],
-      [-46.614, -23.559],
-      [-46.631, -23.567],
-      [-46.653, -23.56],
-      [-46.653, -23.543],
-    ],
-  ]);
+  var searchWithin = turf.polygon(search);
 
   const ptsWithin = pointsWithinPolygon(points, searchWithin);
-  console.log("ptsWithin", ptsWithin);
-}
 
-getPointsWithinPolygon();
+  return ptsWithin;
+}
 
 /**
  * Adds Map marker to the map given set of coordinates
@@ -121,9 +111,9 @@ onMounted(() => {
     zoom: 10,
     center: [-73.997378, 40.730909],
   });
-  map.on("load", () => {
-    addGeocoder();
-  });
+  map.on("load", () => {});
+
+  addGeocoder();
 });
 </script>
 

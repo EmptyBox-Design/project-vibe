@@ -9,7 +9,8 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
-import pointsWithinPolygon from "@turf/points-within-polygon";
+import cityDataSource from "../data/sourceData-light.json";
+// import pointsWithinPolygon from "@turf/points-within-polygon";
 
 import { useMainStore } from "../store/main";
 const store = useMainStore();
@@ -20,6 +21,28 @@ let map = null;
 let selectedCoords = [];
 // MARKER CONTAINER
 let selectedLocationMarker = {};
+
+// PAINT OPTION
+const paintOption = {
+  // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
+  "circle-color": [
+    "match",
+    ["get", "Industry"],
+    "Garage",
+    "#fbb03b",
+    "Tobacco Retail Dealer",
+    "#e55e5e",
+    /* other */ "#091283",
+  ],
+  // "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40],
+  "circle-radius": {
+    base: 1.75,
+    stops: [
+      [12, 2],
+      [22, 180],
+    ],
+  },
+};
 
 /**
  * @param {Array} coords latitude longitude coordinate pair
@@ -37,32 +60,32 @@ function flyTo(coords) {
   });
 }
 
-function getPointsWithinPolygon() {
-  var points = turf.points([
-    [-46.6318, -23.5523],
-    [-46.6246, -23.5325],
-    [-46.6062, -23.5513],
-    [-46.663, -23.554],
-    [-46.643, -23.557],
-  ]);
+// function getPointsWithinPolygon() {
+//   var points = turf.points([
+//     [-46.6318, -23.5523],
+//     [-46.6246, -23.5325],
+//     [-46.6062, -23.5513],
+//     [-46.663, -23.554],
+//     [-46.643, -23.557],
+//   ]);
 
-  var searchWithin = turf.polygon([
-    [
-      [-46.653, -23.543],
-      [-46.634, -23.5346],
-      [-46.613, -23.543],
-      [-46.614, -23.559],
-      [-46.631, -23.567],
-      [-46.653, -23.56],
-      [-46.653, -23.543],
-    ],
-  ]);
+//   var searchWithin = turf.polygon([
+//     [
+//       [-46.653, -23.543],
+//       [-46.634, -23.5346],
+//       [-46.613, -23.543],
+//       [-46.614, -23.559],
+//       [-46.631, -23.567],
+//       [-46.653, -23.56],
+//       [-46.653, -23.543],
+//     ],
+//   ]);
 
-  const ptsWithin = pointsWithinPolygon(points, searchWithin);
-  console.log("ptsWithin", ptsWithin);
-}
+//   const ptsWithin = pointsWithinPolygon(points, searchWithin);
+//   console.log("ptsWithin", ptsWithin);
+// }
 
-getPointsWithinPolygon();
+// getPointsWithinPolygon();
 
 /**
  * Adds Map marker to the map given set of coordinates
@@ -131,6 +154,49 @@ onMounted(() => {
     center: [-73.997378, 40.730909],
   });
 
+  map.on("load", () => {
+    addGeocoder();
+    map.addSource("cityData", {
+      type: "geojson",
+      data: {
+        type: "FeatureCollection",
+        features: [],
+      },
+    });
+    map.addLayer({
+      id: "businesses",
+      type: "circle",
+      source: "cityData",
+      paint: paintOption,
+    });
+
+    // POP-UP
+    // When a click event occurs on a feature in the places layer, open a popup at the
+    // location of the feature, with description HTML from its properties.
+    map.on("click", "businesses", (e) => {
+      // Copy coordinates array.
+      const coordinates = e.features[0].geometry.coordinates.slice();
+      const descriptionRoot = e.features[0];
+      const businessName = `<h1>${descriptionRoot["properties"]["Business Name"]}</h1>`;
+      // Ensure that if the map is zoomed out such that multiple
+      // copies of the feature are visible, the popup appears
+      // over the copy being pointed to.
+      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+      }
+      new mapboxgl.Popup()
+        .setLngLat(coordinates)
+        .setHTML(description)
+        .addTo(map);
+    });
+    // Change the cursor to a pointer when the mouse is over the places layer.
+    map.on("mouseenter", "businesses", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    // Change it back to a pointer when it leaves.
+    map.on("mouseleave", "businesses", () => {
+      map.getCanvas().style.cursor = "";
+    });
 
   map.on("load", () => {
     addGeocoder();
@@ -155,9 +221,6 @@ onMounted(() => {
       },
       'poi-label'
     );
-
-
-
 
     submit()
   });
@@ -195,5 +258,12 @@ onMounted(() => {
 
 .mapboxgl-ctrl-geocoder--icon {
   top: -1px;
+}
+.mapboxgl-popup {
+  max-width: 400px;
+  font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+.mapboxgl-popup-content {
+  color: black !important;
 }
 </style>

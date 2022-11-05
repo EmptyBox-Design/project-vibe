@@ -12,6 +12,8 @@ import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import cityDataSource from "../data/sourceData-light.json";
 // import pointsWithinPolygon from "@turf/points-within-polygon";
 
+import * as turf from "@turf/turf";
+
 import { useMainStore } from "../store/main";
 const store = useMainStore();
 
@@ -60,32 +62,20 @@ function flyTo(coords) {
   });
 }
 
-// function getPointsWithinPolygon() {
-//   var points = turf.points([
-//     [-46.6318, -23.5523],
-//     [-46.6246, -23.5325],
-//     [-46.6062, -23.5513],
-//     [-46.663, -23.554],
-//     [-46.643, -23.557],
-//   ]);
+/**
+ * Takes a polygon
+ * @param {Array} pts coordinate array of points to search
+ * @param {Array} search coordinate array of polygon to search within
+ */
+function getPointsWithinPolygon(pts, search) {
+  var points = turf.points(pts);
 
-//   var searchWithin = turf.polygon([
-//     [
-//       [-46.653, -23.543],
-//       [-46.634, -23.5346],
-//       [-46.613, -23.543],
-//       [-46.614, -23.559],
-//       [-46.631, -23.567],
-//       [-46.653, -23.56],
-//       [-46.653, -23.543],
-//     ],
-//   ]);
+  var searchWithin = turf.polygon(search);
 
-//   const ptsWithin = pointsWithinPolygon(points, searchWithin);
-//   console.log("ptsWithin", ptsWithin);
-// }
+  const ptsWithin = pointsWithinPolygon(points, searchWithin);
 
-// getPointsWithinPolygon();
+  return ptsWithin;
+}
 
 /**
  * Adds Map marker to the map given set of coordinates
@@ -101,6 +91,13 @@ function resetMapFilter() {
 
 function removeMapMarker() {
   selectedLocationMarker.remove();
+}
+
+async function submit() {
+  const coords = [-73.991381456669, 40.74592118535034];
+  const testCallback = await store.CallIsochrone(coords, 10);
+  console.log(testCallback);
+  map.getSource("iso").setData(testCallback);
 }
 
 function addGeocoder() {
@@ -137,6 +134,8 @@ function addGeocoder() {
  * MOUNTED
  */
 onMounted(() => {
+  addGeocoder();
+
   mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_TOKEN;
   map = new mapboxgl.Map({
     container: "map",
@@ -144,9 +143,7 @@ onMounted(() => {
     zoom: 10,
     center: [-73.997378, 40.730909],
   });
-
   map.on("load", () => {
-    addGeocoder();
     map.addSource("cityData", {
       type: "geojson",
       // data: {
@@ -162,9 +159,27 @@ onMounted(() => {
       paint: paintOption,
     });
 
-    // POP-UP
-    // When a click event occurs on a feature in the places layer, open a popup at the
-    // location of the feature, with description HTML from its properties.
+    map.addSource("iso", {
+      type: "geojson",
+      data: {
+        type: "FeatureCollection",
+        features: [],
+      },
+    });
+    map.addLayer(
+      {
+        id: "isoLayer",
+        type: "line",
+        source: "iso",
+        layout: {},
+        paint: {
+          "line-color": "#000",
+          "line-width": 2,
+        },
+      },
+      "poi-label"
+    );
+
     map.on("click", "businesses", (e) => {
       // Copy coordinates array.
       const coordinates = e.features[0].geometry.coordinates.slice();
@@ -199,8 +214,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div id="map" class="absolute h-screen top-0 overflow-hidden"></div>
   <!-- Search Bar -->
+
+  <div id="map" class="absolute h-screen top-0 overflow-hidden"></div>
   <div
     class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px]"
   >

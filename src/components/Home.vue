@@ -9,6 +9,8 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
+import cityDataSource from "../data/sourceData2.json";
+
 // GLOBALS
 let map = null;
 // SELECTED COORDS FROM GEOCODER
@@ -95,6 +97,52 @@ onMounted(() => {
      *
      * Add polygon listener
      */
+    map.addSource("cityData", {
+      type: "geojson",
+      // Point to GeoJSON data. This example visualizes all M1.0+ earthquakes
+      // from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
+      data: cityDataSource,
+      // cluster: true,
+      // clusterMaxZoom: 14, // Max zoom to cluster points on
+      // clusterRadius: 50, // Radius of each cluster when clustering points (defaults to 50)
+    });
+
+    map.addLayer({
+      id: "businesses",
+      type: "circle",
+      source: "cityData",
+      // filter: ["has", "point_count"],
+      paint: {
+        // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
+        // with three steps to implement three types of circles:
+        //   * Blue, 20px circles when point count is less than 100
+        //   * Yellow, 30px circles when point count is between 100 and 750
+        //   * Pink, 40px circles when point count is greater than or equal to 750
+        "circle-color": [
+          "match",
+          ["get", "Industry"],
+          "Home Improvement Contractor",
+          "#fbb03b",
+          "Electronic & Appliance Service",
+          "#223b53",
+          "Tobacco Retail Dealer",
+          "#e55e5e",
+          "Amusement Device Permanent",
+          "#3bb2d0",
+          "Parking Lot",
+          "#123456",
+          /* other */ "#091283",
+        ],
+        // "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40],
+        "circle-radius": {
+          base: 1.75,
+          stops: [
+            [12, 2],
+            [22, 180],
+          ],
+        },
+      },
+    });
   });
 });
 </script>

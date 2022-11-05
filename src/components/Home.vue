@@ -18,6 +18,28 @@ let selectedCoords = [];
 // MARKER CONTAINER
 let selectedLocationMarker = {};
 
+// PAINT OPTION
+const paintOption = {
+  // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
+  "circle-color": [
+    "match",
+    ["get", "Industry"],
+    "Garage",
+    "#fbb03b",
+    "Tobacco Retail Dealer",
+    "#e55e5e",
+    /* other */ "#091283",
+  ],
+  // "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40],
+  "circle-radius": {
+    base: 1.75,
+    stops: [
+      [12, 2],
+      [22, 180],
+    ],
+  },
+};
+
 /**
  * @param {Array} coords latitude longitude coordinate pair
  * @return moves the scene camera to the given coordinate location
@@ -88,61 +110,13 @@ onMounted(() => {
     zoom: 10,
     center: [-73.997378, 40.730909],
   });
+
   map.on("load", () => {
     addGeocoder();
     map.addSource("cityData", {
-      // map.setSource("cityData", {
       type: "geojson",
-      // Point to GeoJSON data. This example visualizes all M1.0+ earthquakes
-      // from 12  /22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
       data: cityDataSource,
-      // cluster: true,
-      // clusterMaxZoom: 14, // Max zoom to cluster points on
-      // clusterRadius: 50, // Radius of each cluster when clustering points (defaults to 50)
     });
-
-    map.addLayer({
-      id: "businesses",
-      type: "circle",
-      source: "cityData",
-      // filter: ["has", "point_count"],
-      paint: {
-        // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
-        // with three steps to implement three types of circles:
-        //   * Blue, 20px circles when point count is less than 100
-        //   * Yellow, 30px circles when point count is between 100 and 750
-        //   * Pink, 40px circles when point count is greater than or equal to 750
-        "circle-color": [
-          "match",
-          ["get", "Industry"],
-          "Home Improvement Contractor",
-          "#fbb03b",
-          "Electronic & Appliance Service",
-          "#223b53",
-          "Tobacco Retail Dealer",
-          "#e55e5e",
-          "Amusement Device Permanent",
-          "#3bb2d0",
-          "Parking Lot",
-          "#123456",
-          /* other */ "#091283",
-        ],
-        // "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40],
-        "circle-radius": {
-          base: 1.75,
-          stops: [
-            [12, 2],
-            [22, 180],
-          ],
-        },
-      },
-    });
-    // POPUP
-    // Create a popup, but don't add it to the map yet.
-    // const popup = new mapboxgl.Popup({
-    //   closeButton: false,
-    //   closeOnClick: false,
-    // });
     // When a click event occurs on a feature in the places layer, open a popup at the
     // location of the feature, with description HTML from its properties.
     map.on("click", "businesses", (e) => {
@@ -158,24 +132,36 @@ onMounted(() => {
       while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
         coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
       }
-
       new mapboxgl.Popup()
         .setLngLat(coordinates)
         .setHTML(description)
         .addTo(map);
     });
-
     // Change the cursor to a pointer when the mouse is over the places layer.
-    map.on("mouseenter", "places", () => {
+    map.on("mouseenter", "businesses", () => {
       map.getCanvas().style.cursor = "pointer";
     });
-
     // Change it back to a pointer when it leaves.
-    map.on("mouseleave", "places", () => {
+    map.on("mouseleave", "businesses", () => {
       map.getCanvas().style.cursor = "";
     });
   });
 });
+// FILTER
+function filterBy(Industry) {
+  const filters = ["==", "Industry", Industry];
+  if (map.getLayer("businesses")) {
+    map.removeLayer("businesses");
+  }
+  map.addLayer({
+    id: "businesses",
+    type: "circle",
+    source: "cityData",
+    // filter: ["has", "point_count"],
+    filter: filters,
+    paint: paintOption,
+  });
+}
 </script>
 
 <template>
@@ -185,6 +171,14 @@ onMounted(() => {
   <div
     class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px]"
   >
+    <div class="selection-div">
+      PoC: Filter by Industry
+      <button @click="filterBy('Garage')">Garage</button>
+      <button @click="filterBy('Tobacco Retail Dealer')">
+        Tobacco Retail Dealer
+      </button>
+    </div>
+
     <div class="relative">
       <div class="flex my-2">
         <div id="search-container" class="grow dark:bg-gray-800"></div>
@@ -215,5 +209,20 @@ onMounted(() => {
 }
 .mapboxgl-popup-content {
   color: black !important;
+}
+.selection-div {
+  position: absolute;
+  min-width: 200px;
+  right: 0;
+  top: 0;
+  background-color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  color: black;
+}
+.selection-div button {
+  background-color: rgba(123, 123, 123, 0.6);
+}
+.selection-div button:last-child {
+  background-color: rgba(134, 12, 132, 0.6);
 }
 </style>

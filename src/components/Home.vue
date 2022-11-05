@@ -9,6 +9,9 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
+import { useMainStore } from "../store/main"
+const store = useMainStore()
+
 // GLOBALS
 let map = null;
 // SELECTED COORDS FROM GEOCODER
@@ -46,6 +49,15 @@ function resetMapFilter() {
 
 function removeMapMarker() {
   selectedLocationMarker.remove();
+}
+
+
+
+async function submit() {
+  const coords = [-73.991381456669, 40.74592118535034]
+  const testCallback = await store.CallIsochrone(coords, 10)
+  console.log(testCallback)
+  map.getSource('iso').setData(testCallback);
 }
 
 function addGeocoder() {
@@ -86,15 +98,36 @@ onMounted(() => {
     zoom: 10,
     center: [-73.997378, 40.730909],
   });
+
+
   map.on("load", () => {
     addGeocoder();
-    /**
-     * TODO:
-     *
-     * Add pluto dataset
-     *
-     * Add polygon listener
-     */
+    map.addSource('iso', {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: []
+      }
+    })
+    map.addLayer(
+      {
+        id: 'isoLayer',
+        type: 'line',
+        source: 'iso',
+        layout: {},
+        paint: {
+          'line-color': '#000',
+          'line-width': 2,
+          
+        }
+      },
+      'poi-label'
+    );
+
+
+
+
+    submit()
   });
 });
 </script>
@@ -104,8 +137,7 @@ onMounted(() => {
 
   <!-- Search Bar -->
   <div
-    class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px]"
-  >
+    class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px]">
     <div class="relative">
       <div class="flex my-2">
         <div id="search-container" class="grow dark:bg-gray-800"></div>
@@ -122,11 +154,13 @@ onMounted(() => {
   border-bottom-right-radius: 0px;
   border-top-right-radius: 0px;
 }
+
 .mapboxgl-ctrl-geocoder,
 .mapboxgl-ctrl-geocoder--icon,
 .mapboxgl-ctrl-geocoder--input {
   height: 100%;
 }
+
 .mapboxgl-ctrl-geocoder--icon {
   top: -1px;
 }

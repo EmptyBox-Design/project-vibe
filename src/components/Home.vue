@@ -9,12 +9,24 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
+import { useMainStore } from "../store/main"
+const store = useMainStore()
+
 // GLOBALS
 let map = null;
 // SELECTED COORDS FROM GEOCODER
 let selectedCoords = [];
 // MARKER CONTAINER
 let selectedLocationMarker = {};
+
+
+
+async function submit(){
+    const coords = [-73.990593, 40.740121]
+    const testCallback = await store.CallIsochrone(coords, 10)
+  console.log(testCallback)
+  map.getSource('iso').setData(testCallback)
+}
 
 /**
  * @param {Array} coords latitude longitude coordinate pair
@@ -88,13 +100,29 @@ onMounted(() => {
   });
   map.on("load", () => {
     addGeocoder();
-    /**
-     * TODO:
-     *
-     * Add pluto dataset
-     *
-     * Add polygon listener
-     */
+    map.addSource('iso', {
+      type:'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: []
+      }
+    })
+     map.addLayer(
+      {
+        id: 'isoLayer',
+        type: 'line',
+        source: 'iso',
+        layout: {},
+        paint: {
+          'line-color': '#000',
+          'line-width': 2,
+
+        }
+      }
+     )
+     
+
+     submit();
   });
 });
 </script>

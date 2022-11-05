@@ -19,8 +19,6 @@ const store = useMainStore();
 
 // GLOBALS
 let map = null;
-// SELECTED COORDS FROM GEOCODER
-let selectedCoords = [];
 // MARKER CONTAINER
 let selectedLocationMarker = {};
 
@@ -86,7 +84,7 @@ function addMapMarker(coords) {
 }
 
 function resetMapFilter() {
-  selectedCoords = [];
+  store.selectedCoords = [];
 }
 
 function removeMapMarker() {
@@ -94,10 +92,14 @@ function removeMapMarker() {
 }
 
 async function submit() {
-  const coords = [-73.991381456669, 40.74592118535034];
-  const testCallback = await store.CallIsochrone(coords, 10);
-  console.log(testCallback);
-  map.getSource("iso").setData(testCallback);
+  const distance = 10;
+  const isochroneResponse = await store.CallIsochrone(
+    store.selectedCoords,
+    distance
+  );
+
+  // SET ISOCHRONE AS POLYGON
+  map.getSource("iso").setData(isochroneResponse);
 }
 
 function addGeocoder() {
@@ -110,13 +112,14 @@ function addGeocoder() {
    * GEOCODER EVENT HANDLERS
    */
   geocoder.on("result", (event) => {
-    if (selectedCoords.length > 0) {
+    if (store.selectedCoords.length > 0) {
       resetMapFilter();
       removeMapMarker();
     }
-    selectedCoords = event.result.center;
-    addMapMarker(selectedCoords);
-    flyTo(selectedCoords);
+    store.selectedCoords = event.result.center;
+    addMapMarker(store.selectedCoords);
+    flyTo(store.selectedCoords);
+    submit();
   });
   geocoder.on("clear", () => {
     resetMapFilter();

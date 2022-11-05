@@ -9,7 +9,10 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
-import pointsWithinPolygon from "@turf/points-within-polygon";
+import cityDataSource from "../data/sourceData-light.json";
+// import pointsWithinPolygon from "@turf/points-within-polygon";
+
+import * as turf from "@turf/turf";
 
 import { useMainStore } from "../store/main";
 const store = useMainStore();
@@ -20,6 +23,28 @@ let map = null;
 let selectedCoords = [];
 // MARKER CONTAINER
 let selectedLocationMarker = {};
+
+// PAINT OPTION
+const paintOption = {
+  // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
+  "circle-color": [
+    "match",
+    ["get", "Industry"],
+    "Garage",
+    "#fbb03b",
+    "Tobacco Retail Dealer",
+    "#e55e5e",
+    /* other */ "#091283",
+  ],
+  // "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40],
+  "circle-radius": {
+    base: 1.75,
+    stops: [
+      [12, 2],
+      [22, 180],
+    ],
+  },
+};
 
 /**
  * @param {Array} coords latitude longitude coordinate pair
@@ -37,32 +62,20 @@ function flyTo(coords) {
   });
 }
 
-function getPointsWithinPolygon() {
-  var points = turf.points([
-    [-46.6318, -23.5523],
-    [-46.6246, -23.5325],
-    [-46.6062, -23.5513],
-    [-46.663, -23.554],
-    [-46.643, -23.557],
-  ]);
+/**
+ * Takes a polygon
+ * @param {Array} pts coordinate array of points to search
+ * @param {Array} search coordinate array of polygon to search within
+ */
+function getPointsWithinPolygon(pts, search) {
+  var points = turf.points(pts);
 
-  var searchWithin = turf.polygon([
-    [
-      [-46.653, -23.543],
-      [-46.634, -23.5346],
-      [-46.613, -23.543],
-      [-46.614, -23.559],
-      [-46.631, -23.567],
-      [-46.653, -23.56],
-      [-46.653, -23.543],
-    ],
-  ]);
+  var searchWithin = turf.polygon(search);
 
   const ptsWithin = pointsWithinPolygon(points, searchWithin);
-  console.log("ptsWithin", ptsWithin);
-}
 
-getPointsWithinPolygon();
+  return ptsWithin;
+}
 
 /**
  * Adds Map marker to the map given set of coordinates
@@ -78,6 +91,13 @@ function resetMapFilter() {
 
 function removeMapMarker() {
   selectedLocationMarker.remove();
+}
+
+async function submit() {
+  const coords = [-73.991381456669, 40.74592118535034];
+  const testCallback = await store.CallIsochrone(coords, 10);
+  console.log(testCallback);
+  map.getSource("iso").setData(testCallback);
 }
 
 function addGeocoder() {
@@ -114,6 +134,8 @@ function addGeocoder() {
  * MOUNTED
  */
 onMounted(() => {
+  addGeocoder();
+
   mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_TOKEN;
   map = new mapboxgl.Map({
     container: "map",
@@ -122,15 +144,68 @@ onMounted(() => {
     center: [-73.997378, 40.730909],
   });
   map.on("load", () => {
-    addGeocoder();
+    map.addSource("cityData", {
+      type: "geojson",
+      data: {
+        type: "FeatureCollection",
+        features: [],
+      },
+    });
+    map.addLayer({
+      id: "businesses",
+      type: "circle",
+      source: "cityData",
+      paint: paintOption,
+    });
+
+    map.addSource("iso", {
+      type: "geojson",
+      data: {
+        type: "FeatureCollection",
+        features: [],
+      },
+    });
+    map.addLayer(
+      {
+        id: "isoLayer",
+        type: "line",
+        source: "iso",
+        layout: {},
+        paint: {
+          "line-color": "#000",
+          "line-width": 2,
+        },
+      },
+      "poi-label"
+    );
+
+    map.on("click", "businesses", (e) => {
+      // Copy coordinates array.
+      const coordinates = e.features[0].geometry.coordinates.slice();
+      const descriptionRoot = e.features[0];
+      coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+
+      new mapboxgl.Popup()
+        .setLngLat(coordinates)
+        .setHTML(description)
+        .addTo(map);
+    });
+    // Change the cursor to a pointer when the mouse is over the places layer.
+    map.on("mouseenter", "businesses", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    // Change it back to a pointer when it leaves.
+    map.on("mouseleave", "businesses", () => {
+      map.getCanvas().style.cursor = "";
+    });
   });
 });
 </script>
 
 <template>
-  <div id="map" class="absolute h-screen top-0 overflow-hidden"></div>
-
   <!-- Search Bar -->
+
+  <div id="map" class="absolute h-screen top-0 overflow-hidden"></div>
   <div
     class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px]"
   >
@@ -157,5 +232,12 @@ onMounted(() => {
 }
 .mapboxgl-ctrl-geocoder--icon {
   top: -1px;
+}
+.mapboxgl-popup {
+  max-width: 400px;
+  font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+.mapboxgl-popup-content {
+  color: black !important;
 }
 </style>

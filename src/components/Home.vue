@@ -146,11 +146,11 @@ onMounted(() => {
   map.on("load", () => {
     map.addSource("cityData", {
       type: "geojson",
-      data: {
-        type: "FeatureCollection",
-        features: [],
-      },
-      // data: cityDataSource,
+      // data: {
+      //   type: "FeatureCollection",
+      //   features: [],
+      // },
+      data: cityDataSource,
     });
     map.addLayer({
       id: "businesses",

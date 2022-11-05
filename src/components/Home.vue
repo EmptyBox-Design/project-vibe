@@ -10,7 +10,7 @@ import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
 import cityDataSource from "../data/sourceData-light.json";
-import pointsWithinPolygon from "@turf/points-within-polygon";
+// import pointsWithinPolygon from "@turf/points-within-polygon";
 
 import { useMainStore } from "../store/main";
 const store = useMainStore();
@@ -60,32 +60,32 @@ function flyTo(coords) {
   });
 }
 
-function getPointsWithinPolygon() {
-  var points = turf.points([
-    [-46.6318, -23.5523],
-    [-46.6246, -23.5325],
-    [-46.6062, -23.5513],
-    [-46.663, -23.554],
-    [-46.643, -23.557],
-  ]);
+// function getPointsWithinPolygon() {
+//   var points = turf.points([
+//     [-46.6318, -23.5523],
+//     [-46.6246, -23.5325],
+//     [-46.6062, -23.5513],
+//     [-46.663, -23.554],
+//     [-46.643, -23.557],
+//   ]);
 
-  var searchWithin = turf.polygon([
-    [
-      [-46.653, -23.543],
-      [-46.634, -23.5346],
-      [-46.613, -23.543],
-      [-46.614, -23.559],
-      [-46.631, -23.567],
-      [-46.653, -23.56],
-      [-46.653, -23.543],
-    ],
-  ]);
+//   var searchWithin = turf.polygon([
+//     [
+//       [-46.653, -23.543],
+//       [-46.634, -23.5346],
+//       [-46.613, -23.543],
+//       [-46.614, -23.559],
+//       [-46.631, -23.567],
+//       [-46.653, -23.56],
+//       [-46.653, -23.543],
+//     ],
+//   ]);
 
-  const ptsWithin = pointsWithinPolygon(points, searchWithin);
-  console.log("ptsWithin", ptsWithin);
-}
+//   const ptsWithin = pointsWithinPolygon(points, searchWithin);
+//   console.log("ptsWithin", ptsWithin);
+// }
 
-getPointsWithinPolygon();
+// getPointsWithinPolygon();
 
 /**
  * Adds Map marker to the map given set of coordinates
@@ -149,17 +149,26 @@ onMounted(() => {
     addGeocoder();
     map.addSource("cityData", {
       type: "geojson",
-      data: cityDataSource,
+      data: {
+        type: "FeatureCollection",
+        features: [],
+      },
     });
+    map.addLayer({
+      id: "businesses",
+      type: "circle",
+      source: "cityData",
+      paint: paintOption,
+    });
+
+    // POP-UP
     // When a click event occurs on a feature in the places layer, open a popup at the
     // location of the feature, with description HTML from its properties.
     map.on("click", "businesses", (e) => {
       // Copy coordinates array.
       const coordinates = e.features[0].geometry.coordinates.slice();
       const descriptionRoot = e.features[0];
-      const description =
-        "Name: " + descriptionRoot["properties"]["Business Name"];
-
+      const businessName = `<h1>${descriptionRoot["properties"]["Business Name"]}</h1>`;
       // Ensure that if the map is zoomed out such that multiple
       // copies of the feature are visible, the popup appears
       // over the copy being pointed to.
@@ -181,21 +190,6 @@ onMounted(() => {
     });
   });
 });
-// FILTER
-function filterBy(Industry) {
-  const filters = ["==", "Industry", Industry];
-  if (map.getLayer("businesses")) {
-    map.removeLayer("businesses");
-  }
-  map.addLayer({
-    id: "businesses",
-    type: "circle",
-    source: "cityData",
-    // filter: ["has", "point_count"],
-    filter: filters,
-    paint: paintOption,
-  });
-}
 </script>
 
 <template>
@@ -205,14 +199,6 @@ function filterBy(Industry) {
   <div
     class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px]"
   >
-    <div class="selection-div">
-      PoC: Filter by Industry
-      <button @click="filterBy('Garage')">Garage</button>
-      <button @click="filterBy('Tobacco Retail Dealer')">
-        Tobacco Retail Dealer
-      </button>
-    </div>
-
     <div class="relative">
       <div class="flex my-2">
         <div id="search-container" class="grow dark:bg-gray-800"></div>
@@ -243,20 +229,5 @@ function filterBy(Industry) {
 }
 .mapboxgl-popup-content {
   color: black !important;
-}
-.selection-div {
-  position: absolute;
-  min-width: 200px;
-  right: 0;
-  top: 0;
-  background-color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
-  color: black;
-}
-.selection-div button {
-  background-color: rgba(123, 123, 123, 0.6);
-}
-.selection-div button:last-child {
-  background-color: rgba(134, 12, 132, 0.6);
 }
 </style>

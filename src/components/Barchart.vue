@@ -140,4 +140,11 @@ const chartOptions = {
   </div>
 </template>
 
-<style></style>
+<style>
+#barchart {
+  background-color: rgba(255, 255, 255, 0.4);
+  transition: 0.5s;
+  pointer-events: none;
+  user-select: none;
+}
+</style>

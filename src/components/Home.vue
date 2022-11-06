@@ -12,6 +12,8 @@ import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import cityDataSource from "../data/sourceData-light.json";
 // import pointsWithinPolygon from "@turf/points-within-polygon";
 
+import Barchart from "./Barchart.vue"
+
 import * as turf from "@turf/turf";
 
 import { useMainStore } from "../store/main";
@@ -207,13 +209,17 @@ onMounted(() => {
 
   <div id="map" class="absolute h-screen top-0 overflow-hidden"></div>
   <div
-    class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px]"
-  >
+    class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px]">
     <div class="relative">
       <div class="flex my-2">
         <div id="search-container" class="grow dark:bg-gray-800"></div>
       </div>
     </div>
+  </div>
+
+  <div class="absolute flex justify-center w-[100vw] bottom-2 p-2">
+
+    <Barchart class="h-[230px] bg-white" />
   </div>
 </template>
 
@@ -225,18 +231,22 @@ onMounted(() => {
   border-bottom-right-radius: 0px;
   border-top-right-radius: 0px;
 }
+
 .mapboxgl-ctrl-geocoder,
 .mapboxgl-ctrl-geocoder--icon,
 .mapboxgl-ctrl-geocoder--input {
   height: 100%;
 }
+
 .mapboxgl-ctrl-geocoder--icon {
   top: -1px;
 }
+
 .mapboxgl-popup {
   max-width: 400px;
   font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
 }
+
 .mapboxgl-popup-content {
   color: black !important;
 }

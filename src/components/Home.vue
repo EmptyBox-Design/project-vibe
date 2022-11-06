@@ -240,11 +240,11 @@ onMounted(() => {
 
 <template>
   <!-- Search Bar -->
-
   <div id="map" class="absolute h-screen top-0 overflow-hidden"></div>
   <div
     class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px]"
   >
+    <h2 class="text-slate-900 font-bold text-2xl">Project Vibe</h2>
     <div class="relative">
       <div class="flex my-2">
         <div id="search-container" class="grow dark:bg-gray-800"></div>

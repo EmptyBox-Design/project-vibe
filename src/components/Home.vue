@@ -21,6 +21,17 @@ const store = useMainStore();
 let map = null;
 // MARKER CONTAINER
 let selectedLocationMarker = {};
+// MARKER CATEGORY AND COLOR
+const markerCategoryAndColor = {
+  Entertainment: "#f94144",
+  Business: "#f3722c",
+  "Convenience Stores": "#f8961e",
+  Retail: "#f9844a",
+  Parking: "#f9c74f",
+  "Food & Restaurants": "#001d3d",
+  "Religious Institution": "#577590",
+  Others: "#7d8597",
+};
 
 // PAINT OPTION
 const paintOption = {
@@ -29,28 +40,20 @@ const paintOption = {
     "match",
     ["get", "Business_Type"],
     "Entertainment",
-    "#f94144",
+    markerCategoryAndColor["Entertainment"],
     "Business",
-    "#f3722c",
+    markerCategoryAndColor["Business"],
     "Convenience Stores",
-    "#f8961e",
+    markerCategoryAndColor["Convenience Stores"],
     "Retail",
-    "#f9844a",
+    markerCategoryAndColor["Retail"],
     "Parking",
-    "#f9c74f",
-    "Utilities",
-    "#90be6d",
-    "Cafe",
-    "#43aa8b",
-    "Storage",
-    "#4d908e",
-    "Religious Institution",
-    "#577590",
-    "Laundry",
-    "#277da1",
+    markerCategoryAndColor["Parking"],
     "Food & Restaurants",
-    "#001d3d",
-    /* other */ "#7d8597",
+    markerCategoryAndColor["Food & Restaurants"],
+    "Religious Institution",
+    markerCategoryAndColor["Religious Institution"],
+    /* other */ markerCategoryAndColor["Others"],
   ],
   "circle-radius": {
     base: 1.75,
@@ -141,8 +144,8 @@ function addGeocoder() {
     }
     store.selectedCoords = event.result.center;
     addMapMarker(store.selectedCoords);
-    flyTo(store.selectedCoords);
     submit();
+    flyTo(store.selectedCoords);
   });
   geocoder.on("clear", () => {
     resetMapFilter();
@@ -210,7 +213,9 @@ onMounted(() => {
       const coordinates = e.features[0].geometry.coordinates.slice();
       const descriptionRoot = e.features[0]["properties"];
       const businessName = descriptionRoot["Business Name"]
-        ? `<h1><b>${descriptionRoot["Business Name"]}</b></h1>`
+        ? `<h1 style='color:${
+            markerCategoryAndColor[descriptionRoot["Business_Type"]]
+          }'><b>${descriptionRoot["Business Name"]}</b></h1>`
         : "N/A";
       const businessName2 = descriptionRoot["Business Name 2"]
         ? `<h1>${descriptionRoot["Business Name 2"]}</h1>`

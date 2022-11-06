@@ -14,7 +14,7 @@ import cityDataSource from "../data/cleanedBusinessData.json";
 
 import pointsWithinPolygon from "@turf/points-within-polygon";
 
-import Barchart from "./Barchart.vue"
+import Barchart from "./Barchart.vue";
 
 import * as turf from "@turf/turf";
 
@@ -253,21 +253,20 @@ onMounted(() => {
 
   <!-- Search Bar -->
   <div
-    class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px]"
+    class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px] select-none pointer-events-none"
   >
-    <div class="flex flex-col justify-around">
-      <div id="search-container" class="grow dark:bg-gray-800"></div>
-      <UIButton></UIButton>
-    <h2 class="text-slate-900 font-bold text-2xl">Project Vibe</h2>
-    <div class="relative">
-      <div class="flex my-2">
-        <div id="search-container" class="grow dark:bg-gray-800"></div>
+    <div class="flex flex-col justify-around select-none">
+      <h2 class="text-slate-900 font-bold text-2xl">Project Vibe</h2>
+      <div class="relative">
+        <div class="flex my-2">
+          <div id="search-container" class="grow dark:bg-gray-800"></div>
+        </div>
       </div>
+      <UIButton></UIButton>
     </div>
   </div>
 
   <div class="absolute flex justify-center w-[100vw] bottom-2 p-2">
-
     <Barchart class="h-[230px] bg-white" />
   </div>
 </template>

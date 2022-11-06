@@ -22,8 +22,8 @@ watch(barData, () => {
 });
 const chartOptions = {
   chart: {
-    height: 150,
-    width: 450,
+    height: 175,
+    width: "100%",
     type: "bar",
     toolbar: {
       show: false,
@@ -132,7 +132,7 @@ const chartOptions = {
       <apexchart
         type="bar"
         height="200"
-        width="500"
+        width="100%"
         :options="chartOptions"
         :series="series"
       ></apexchart>

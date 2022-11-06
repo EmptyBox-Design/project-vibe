@@ -1,9 +1,12 @@
 <script setup>
-import { ref } from "vue";
 import { useMainStore } from "../store/main";
 const store = useMainStore();
 
-const distance = ref(5);
+const emits = defineEmits(["reset", "submit"]);
+
+function updateDistance(val) {
+  store.distance = val;
+}
 </script>
 
 <template>
@@ -14,8 +17,7 @@ const distance = ref(5);
     <div class="flex-row">
       <div class="form-check">
         <input
-          v-model="distance"
-          :value="5"
+          @input="updateDistance(5)"
           class="form-check-input appearance-none rounded-full h-4 w-4 border border-gray-300 bg-white checked:bg-blue-600 checked:border-blue-600 focus:outline-none transition duration-200 mt-1 align-top bg-no-repeat bg-center bg-contain float-left mr-2 cursor-pointer"
           type="radio"
           name="flexRadioDefault"
@@ -31,8 +33,7 @@ const distance = ref(5);
       </div>
       <div class="form-check">
         <input
-          v-model="distance"
-          :value="10"
+          @input="updateDistance(10)"
           class="form-check-input appearance-none rounded-full h-4 w-4 border border-gray-300 bg-white checked:bg-blue-600 checked:border-blue-600 focus:outline-none transition duration-200 mt-1 align-top bg-no-repeat bg-center bg-contain float-left mr-2 cursor-pointer"
           type="radio"
           name="flexRadioDefault"
@@ -46,12 +47,20 @@ const distance = ref(5);
         </label>
       </div>
     </div>
-    <button
-      class="bg-emerald-700 my-2 p-4 w-full hover:bg-opacity-70"
-      @click="store.distance = distance"
-    >
-      Submit
-    </button>
+    <div class="flex">
+      <button
+        @click="$emit('submit')"
+        class="bg-emerald-700 m-2 p-4 w-full hover:bg-opacity-70 rounded-lg"
+      >
+        Submit
+      </button>
+      <button
+        @click="$emit('reset')"
+        class="border-2 border-rose-500 m-2 p-4 w-full hover:bg-rose-500 hover:text-white text-slate-700 rounded-lg"
+      >
+        Reset
+      </button>
+    </div>
   </div>
 </template>
 

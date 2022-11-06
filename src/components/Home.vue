@@ -25,6 +25,7 @@ const store = useMainStore();
 let map = null;
 // MARKER CONTAINER
 let selectedLocationMarker = {};
+let geocoder = null;
 
 // PAINT OPTION
 const paintOption = {
@@ -123,6 +124,12 @@ function resetMapFilter() {
       "Religious Institution": 0,
     }
   );
+
+  if (selectedLocationMarker) removeMapMarker();
+
+  document.getElementsByClassName(
+    "mapboxgl-ctrl-geocoder--input"
+  )[0].innerText = "";
 }
 
 function removeMapMarker() {
@@ -130,11 +137,7 @@ function removeMapMarker() {
 }
 
 async function submit() {
-  const distance = 10;
-  const isochroneResponse = await store.CallIsochrone(
-    store.selectedCoords,
-    distance
-  );
+  const isochroneResponse = await store.CallIsochrone(store.selectedCoords);
 
   // SET ISOCHRONE AS POLYGON
   map.getSource("iso").setData(isochroneResponse);
@@ -144,10 +147,12 @@ async function submit() {
   ]);
 
   map.getSource("cityData").setData(queriedPoints);
+
+  flyTo(store.selectedCoords);
 }
 
 function addGeocoder() {
-  const geocoder = new MapboxGeocoder({
+  geocoder = new MapboxGeocoder({
     accessToken: import.meta.env.VITE_MAPBOX_API_TOKEN,
     mapboxgl: mapboxgl,
     marker: false,
@@ -158,23 +163,16 @@ function addGeocoder() {
   geocoder.on("result", async (event) => {
     if (store.selectedCoords.length > 0) {
       resetMapFilter();
-      if (selectedLocationMarker) removeMapMarker();
     }
     store.selectedCoords = event.result.center;
 
     addMapMarker(store.selectedCoords);
-
-    await submit();
-
-    flyTo(store.selectedCoords);
   });
   geocoder.on("clear", () => {
     resetMapFilter();
-    if (selectedLocationMarker) removeMapMarker();
   });
   geocoder.on("error", () => {
     resetMapFilter();
-    if (selectedLocationMarker) removeMapMarker();
   });
 
   geocoder.addTo("#search-container");
@@ -278,7 +276,11 @@ onMounted(() => {
           <div id="search-container" class="grow dark:bg-gray-800"></div>
         </div>
       </div>
-      <UIButton></UIButton>
+      <UIButton
+        class="pointer-events-auto"
+        @reset="resetMapFilter"
+        @submit="submit"
+      ></UIButton>
     </div>
   </div>
 

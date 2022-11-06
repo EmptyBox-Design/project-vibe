@@ -208,6 +208,7 @@ onMounted(() => {
         type: "FeatureCollection",
         features: [],
       },
+      // data: cityDataSource
     });
     map.addLayer({
       id: "businesses",
@@ -280,7 +281,9 @@ onMounted(() => {
     class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px] select-none pointer-events-none"
   >
     <div class="flex flex-col justify-around select-none">
-      <h2 class="text-slate-900 font-bold text-2xl">Project Vibe</h2>
+      <h2 class="text-slate-900 font-bold text-2xl">
+        <img id="logo-img" src="logo.png" />Project Vibe
+      </h2>
       <div class="relative">
         <div class="flex my-2">
           <div id="search-container" class="grow dark:bg-gray-800"></div>
@@ -325,5 +328,11 @@ onMounted(() => {
 
 .mapboxgl-popup-content {
   color: black !important;
+}
+#logo-img {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline;
+  margin-right: 0.5rem;
 }
 </style>

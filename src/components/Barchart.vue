@@ -25,6 +25,12 @@ const chartOptions = {
     height: 150,
     width: 450,
     type: "bar",
+    toolbar: {
+      show: false,
+      tools: {
+        download: false,
+      },
+    },
   },
   plotOptions: {
     bar: {
@@ -37,9 +43,7 @@ const chartOptions = {
   tooltip: {
     enabled: false,
   },
-  toolbar: {
-    show: false,
-  },
+
   dataLabels: {
     enabled: true,
     formatter: function (val) {
@@ -109,6 +113,7 @@ const chartOptions = {
     },
   },
   title: {
+    show: false,
     text: "Number of Businesses By Category",
     floating: true,
     offsetY: 330,
@@ -122,10 +127,11 @@ const chartOptions = {
 
 <template>
   <div id="barchart" class="border-1 rounded-lg">
-    <div id="chart">
+    <h5 class="text-slate-800 m-2">Number of Businesses By Category</h5>
+    <div id="chart" class="p-3">
       <apexchart
         type="bar"
-        height="230"
+        height="200"
         width="500"
         :options="chartOptions"
         :series="series"

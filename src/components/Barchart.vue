@@ -114,7 +114,7 @@ const chartOptions = {
   },
   title: {
     show: false,
-    text: "Number of Businesses By Category",
+    text: "Number of Business Locations Per Category",
     floating: true,
     offsetY: 330,
     align: "center",

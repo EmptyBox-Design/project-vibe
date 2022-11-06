@@ -9,9 +9,9 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
-import cityDataSource from "../data/sourceData-light.json";
-// import pointsWithinPolygon from "@turf/points-within-polygon";
+import cityDataSource from "../data/cleanedBusinessData.json";
 
+import pointsWithinPolygon from "@turf/points-within-polygon";
 import * as turf from "@turf/turf";
 
 import { useMainStore } from "../store/main";
@@ -19,24 +19,42 @@ const store = useMainStore();
 
 // GLOBALS
 let map = null;
-// SELECTED COORDS FROM GEOCODER
-let selectedCoords = [];
 // MARKER CONTAINER
 let selectedLocationMarker = {};
+// MARKER CATEGORY AND COLOR
+const markerCategoryAndColor = {
+  Entertainment: "#f94144",
+  Business: "#f3722c",
+  "Convenience Stores": "#f8961e",
+  Retail: "#f9844a",
+  Parking: "#f9c74f",
+  "Food & Restaurants": "#001d3d",
+  "Religious Institution": "#577590",
+  Others: "#7d8597",
+};
 
 // PAINT OPTION
 const paintOption = {
   // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
   "circle-color": [
     "match",
-    ["get", "Industry"],
-    "Garage",
-    "#fbb03b",
-    "Tobacco Retail Dealer",
-    "#e55e5e",
-    /* other */ "#091283",
+    ["get", "Business_Type"],
+    "Entertainment",
+    markerCategoryAndColor["Entertainment"],
+    "Business",
+    markerCategoryAndColor["Business"],
+    "Convenience Stores",
+    markerCategoryAndColor["Convenience Stores"],
+    "Retail",
+    markerCategoryAndColor["Retail"],
+    "Parking",
+    markerCategoryAndColor["Parking"],
+    "Food & Restaurants",
+    markerCategoryAndColor["Food & Restaurants"],
+    "Religious Institution",
+    markerCategoryAndColor["Religious Institution"],
+    /* other */ markerCategoryAndColor["Others"],
   ],
-  // "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40],
   "circle-radius": {
     base: 1.75,
     stops: [
@@ -68,12 +86,13 @@ function flyTo(coords) {
  * @param {Array} search coordinate array of polygon to search within
  */
 function getPointsWithinPolygon(pts, search) {
-  var points = turf.points(pts);
-
+  // var points = turf.points(pts);
   var searchWithin = turf.polygon(search);
 
-  const ptsWithin = pointsWithinPolygon(points, searchWithin);
+  // const ptsWithin = pointsWithinPolygon(points, searchWithin);
 
+  const ptsWithin = pointsWithinPolygon(pts, searchWithin);
+  console.log(ptsWithin);
   return ptsWithin;
 }
 
@@ -86,18 +105,27 @@ function addMapMarker(coords) {
 }
 
 function resetMapFilter() {
-  selectedCoords = [];
+  store.selectedCoords = [];
 }
 
 function removeMapMarker() {
-  selectedLocationMarker.remove();
+  if (selectedLocationMarker) selectedLocationMarker.remove();
 }
 
 async function submit() {
-  const coords = [-73.991381456669, 40.74592118535034];
-  const testCallback = await store.CallIsochrone(coords, 10);
-  console.log(testCallback);
-  map.getSource("iso").setData(testCallback);
+  const distance = 10;
+  const isochroneResponse = await store.CallIsochrone(
+    store.selectedCoords,
+    distance
+  );
+
+  // SET ISOCHRONE AS POLYGON
+  map.getSource("iso").setData(isochroneResponse);
+
+  const queriedPoints = getPointsWithinPolygon(cityDataSource, [
+    isochroneResponse["features"][0]["geometry"]["coordinates"],
+  ]);
+  map.getSource("cityData").setData(queriedPoints);
 }
 
 function addGeocoder() {
@@ -110,21 +138,22 @@ function addGeocoder() {
    * GEOCODER EVENT HANDLERS
    */
   geocoder.on("result", (event) => {
-    if (selectedCoords.length > 0) {
+    if (store.selectedCoords.length > 0) {
       resetMapFilter();
-      removeMapMarker();
+      if (selectedLocationMarker) removeMapMarker();
     }
-    selectedCoords = event.result.center;
-    addMapMarker(selectedCoords);
-    flyTo(selectedCoords);
+    store.selectedCoords = event.result.center;
+    addMapMarker(store.selectedCoords);
+    submit();
+    flyTo(store.selectedCoords);
   });
   geocoder.on("clear", () => {
     resetMapFilter();
-    removeMapMarker();
+    if (selectedLocationMarker) removeMapMarker();
   });
   geocoder.on("error", () => {
     resetMapFilter();
-    removeMapMarker();
+    if (selectedLocationMarker) removeMapMarker();
   });
 
   geocoder.addTo("#search-container");
@@ -146,11 +175,10 @@ onMounted(() => {
   map.on("load", () => {
     map.addSource("cityData", {
       type: "geojson",
-      // data: {
-      //   type: "FeatureCollection",
-      //   features: [],
-      // },
-      data: cityDataSource,
+      data: {
+        type: "FeatureCollection",
+        features: [],
+      },
     });
     map.addLayer({
       id: "businesses",
@@ -184,17 +212,23 @@ onMounted(() => {
       // Copy coordinates array.
       const coordinates = e.features[0].geometry.coordinates.slice();
       const descriptionRoot = e.features[0]["properties"];
-      const businessName = `<h1><b>${descriptionRoot["Business Name"]}</b></h1>`;
-      const businessName2 = descriptionRoot["Business Name 2"]
-        ? `<h1>${descriptionRoot["Business Name 2"]}</h1>`
+      const businessName = descriptionRoot["Business Name"]
+        ? `<h1 style='background-color:${
+            markerCategoryAndColor[descriptionRoot["Business_Type"]]
+          }'><b>${descriptionRoot["Business Name"]}</b></h1>`
+        : "N/A";
+      const Industry = descriptionRoot["Industry"]
+        ? `<h1>Industry: ${descriptionRoot["Industry"]}</h1>`
         : "";
-      const businessContact = `<span>📞 ${descriptionRoot["Contact Phone Number"]}</span>`;
-      // Ensure that if the map is zoomed out such that multiple
-      // copies of the feature are visible, the popup appears
-      // over the copy being pointed to.
-      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-      }
+      const BusinessType = descriptionRoot["Business_Type"]
+        ? `<h1>Business Type: ${descriptionRoot["Business_Type"]}</h1>`
+        : "";
+      const BusinessAddress = descriptionRoot["BusinessAddress"]
+        ? `<span style='color:grey;text-align:right'>Business Type: ${descriptionRoot["BusinessAddress"]}</span>`
+        : "";
+
+      coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+
       new mapboxgl.Popup()
         .setLngLat(coordinates)
         .setHTML(businessName + businessName2 + businessContact)
@@ -214,11 +248,11 @@ onMounted(() => {
 
 <template>
   <!-- Search Bar -->
-
   <div id="map" class="absolute h-screen top-0 overflow-hidden"></div>
   <div
     class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px]"
   >
+    <h2 class="text-slate-900 font-bold text-2xl">Project Vibe</h2>
     <div class="relative">
       <div class="flex my-2">
         <div id="search-container" class="grow dark:bg-gray-800"></div>
@@ -244,8 +278,7 @@ onMounted(() => {
   top: -1px;
 }
 .mapboxgl-popup {
-  max-width: 500px;
-  margin: 10px;
+  max-width: 400px;
   font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
 }
 .mapboxgl-popup-content {

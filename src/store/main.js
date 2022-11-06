@@ -3,6 +3,8 @@ import { defineStore } from "pinia";
 export const useMainStore = defineStore("main", {
   state: () => ({
     isochrone: [],
+    barData: [1, 2, 3, 4, 5, 6, 7]
+    distance: 5,
     selectedCoords: [],
   }),
   getters: {},

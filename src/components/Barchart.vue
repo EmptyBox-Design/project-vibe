@@ -1,29 +1,44 @@
 <script setup>
-import { useMainStore } from "../store/main"
-const store = useMainStore()
+import { ref, watch } from "vue";
+import { storeToRefs } from "pinia";
+import { useMainStore } from "../store/main";
+const store = useMainStore();
+const { barData } = storeToRefs(useMainStore());
 
-const series = [{
-  name: 'Inflation',
-  data: store.barData
-}]
+let series = ref([
+  {
+    name: "bar-data",
+    data: Object.values(store.barData),
+  },
+]);
 
-const colors = ['#A300D6', '#5C4742', '#662E9B', '#D7263D', '#449DD1', '#2B908F', '#F86624'];
-
-let index = 0;
-
+watch(barData, () => {
+  series.value = [
+    {
+      name: "bar-data",
+      data: store.barArray,
+    },
+  ];
+});
 const chartOptions = {
   chart: {
     height: 150,
     width: 450,
-    type: 'bar',
+    type: "bar",
   },
   plotOptions: {
     bar: {
       borderRadius: 10,
       dataLabels: {
-        position: 'top', // top, center, bottom
+        position: "top", // top, center, bottom
       },
-    }
+    },
+  },
+  tooltip: {
+    enabled: false,
+  },
+  toolbar: {
+    show: false,
   },
   dataLabels: {
     enabled: true,
@@ -32,54 +47,56 @@ const chartOptions = {
     },
     offsetY: -20,
     style: {
-      fontSize: '10px',
-      colors: ["#304758"]
+      fontSize: "10px",
+      colors: ["#304758"],
     },
   },
-
   xaxis: {
-    categories: ["Entertainment", "Business", "Convenience Stores", "Retail", "Parking", "Food & Restaurants", "Religious Institution"],
+    categories: [
+      "Entertainment",
+      "Business",
+      "Convenience Stores",
+      "Retail",
+      "Parking",
+      "Food & Restaurants",
+      "Religious Institution",
+    ],
     labels: {
       style: {
-        fontSize: '10px'
-      }
+        fontSize: "10px",
+      },
     },
-    position: 'bottom',
+    position: "bottom",
     axisBorder: {
-      show: false
+      show: false,
     },
     axisTicks: {
-      show: false
+      show: false,
     },
     crosshairs: {
-      fill: {
-        type: 'gradient',
-        gradient: {
-          colorFrom: '#D8E3F0',
-          colorTo: '#BED1E6',
-          stops: [0, 100],
-          opacityFrom: 0.4,
-          opacityTo: 0.5,
-        }
-      }
+      show: false,
     },
     tooltip: {
       enabled: false,
-    }
+    },
   },
-  colors: [function ({ _, seriesIndex }) {
-    if (index < colors.length) {
-      const color = colors[index]
-      index += 1
-      return color
-    } 
-    else{
-      return colors[0]
-    }
-  }],
+  colors: [
+    function ({ value, seriesIndex, dataPointIndex, w }) {
+      return store.colors[dataPointIndex];
+    },
+  ],
+  grid: {
+    yaxis: {
+      lines: {
+        show: false,
+      },
+    },
+  },
   yaxis: {
+    enabled: false,
+    show: false,
     axisBorder: {
-      show: false
+      show: false,
     },
     axisTicks: {
       show: false,
@@ -88,32 +105,33 @@ const chartOptions = {
       show: false,
       formatter: function (val) {
         return val;
-      }
-    }
+      },
+    },
   },
   title: {
-    text: 'Number of Businesses By Category',
+    text: "Number of Businesses By Category",
     floating: true,
     offsetY: 330,
-    align: 'center',
+    align: "center",
     style: {
-      color: '#444'
-    }
-  }
-}
-
+      color: "#444",
+    },
+  },
+};
 </script>
-
 
 <template>
   <div id="barchart" class="border-1 rounded-lg">
     <div id="chart">
-      <apexchart type="bar" height="230" width="500" :options="chartOptions" :series="series"></apexchart>
+      <apexchart
+        type="bar"
+        height="230"
+        width="500"
+        :options="chartOptions"
+        :series="series"
+      ></apexchart>
     </div>
   </div>
 </template>
 
-
-<style>
-
-</style>
+<style></style>

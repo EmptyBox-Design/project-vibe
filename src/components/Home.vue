@@ -10,7 +10,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
-import cityDataSource from "../data/cleanedBusinessData.json";
+import cityDataSource from "../data/data.json";
 
 import pointsWithinPolygon from "@turf/points-within-polygon";
 
@@ -25,39 +25,27 @@ const store = useMainStore();
 let map = null;
 // MARKER CONTAINER
 let selectedLocationMarker = {};
-// MARKER CATEGORY AND COLOR
-const markerCategoryAndColor = {
-  Entertainment: "#f94144",
-  Business: "#f3722c",
-  "Convenience Stores": "#f8961e",
-  Retail: "#f9844a",
-  Parking: "#f9c74f",
-  "Food & Restaurants": "#001d3d",
-  "Religious Institution": "#577590",
-  Others: "#7d8597",
-};
 
 // PAINT OPTION
 const paintOption = {
-  // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
   "circle-color": [
     "match",
     ["get", "Business_Type"],
     "Entertainment",
-    markerCategoryAndColor["Entertainment"],
+    store.mapColors["Entertainment"],
     "Business",
-    markerCategoryAndColor["Business"],
+    store.mapColors["Business"],
     "Convenience Stores",
-    markerCategoryAndColor["Convenience Stores"],
+    store.mapColors["Convenience Stores"],
     "Retail",
-    markerCategoryAndColor["Retail"],
+    store.mapColors["Retail"],
     "Parking",
-    markerCategoryAndColor["Parking"],
+    store.mapColors["Parking"],
     "Food & Restaurants",
-    markerCategoryAndColor["Food & Restaurants"],
+    store.mapColors["Food & Restaurants"],
     "Religious Institution",
-    markerCategoryAndColor["Religious Institution"],
-    /* other */ markerCategoryAndColor["Others"],
+    store.mapColors["Religious Institution"],
+    /* other */ store.mapColors["Others"],
   ],
   "circle-radius": {
     base: 1.75,
@@ -83,20 +71,24 @@ function flyTo(coords) {
     },
   });
 }
+function updateBarChart(queriedPoints) {
+  queriedPoints.features.forEach((d) => {
+    store.barData[d.properties.Business_Type] += 1;
+  });
 
+  store.barData = Object.assign({}, store.barData);
+}
 /**
  * Takes a polygon
  * @param {Array} pts coordinate array of points to search
  * @param {Array} search coordinate array of polygon to search within
  */
 function getPointsWithinPolygon(pts, search) {
-  // var points = turf.points(pts);
   var searchWithin = turf.polygon(search);
 
-  // const ptsWithin = pointsWithinPolygon(points, searchWithin);
-
   const ptsWithin = pointsWithinPolygon(pts, searchWithin);
-  console.log(ptsWithin);
+
+  updateBarChart(ptsWithin);
   return ptsWithin;
 }
 
@@ -110,6 +102,27 @@ function addMapMarker(coords) {
 
 function resetMapFilter() {
   store.selectedCoords = [];
+  map.getSource("iso").setData({
+    type: "FeatureCollection",
+    features: [],
+  });
+  map.getSource("cityData").setData({
+    type: "FeatureCollection",
+    features: [],
+  });
+
+  store.barData = Object.assign(
+    {},
+    {
+      Entertainment: 0,
+      Business: 0,
+      "Convenience Stores": 0,
+      Retail: 0,
+      Parking: 0,
+      "Food & Restaurants": 0,
+      "Religious Institution": 0,
+    }
+  );
 }
 
 function removeMapMarker() {
@@ -129,6 +142,7 @@ async function submit() {
   const queriedPoints = getPointsWithinPolygon(cityDataSource, [
     isochroneResponse["features"][0]["geometry"]["coordinates"],
   ]);
+
   map.getSource("cityData").setData(queriedPoints);
 }
 
@@ -141,14 +155,17 @@ function addGeocoder() {
   /**
    * GEOCODER EVENT HANDLERS
    */
-  geocoder.on("result", (event) => {
+  geocoder.on("result", async (event) => {
     if (store.selectedCoords.length > 0) {
       resetMapFilter();
       if (selectedLocationMarker) removeMapMarker();
     }
     store.selectedCoords = event.result.center;
+
     addMapMarker(store.selectedCoords);
-    submit();
+
+    await submit();
+
     flyTo(store.selectedCoords);
   });
   geocoder.on("clear", () => {
@@ -218,7 +235,7 @@ onMounted(() => {
       const descriptionRoot = e.features[0]["properties"];
       const businessName = descriptionRoot["Business Name"]
         ? `<h1 style='color:${
-            markerCategoryAndColor[descriptionRoot["Business_Type"]]
+            store.mapColors[descriptionRoot["Business_Type"]]
           }'><b>${descriptionRoot["Business Name"]}</b></h1>`
         : "N/A";
       const businessName2 = descriptionRoot["Business Name 2"]
@@ -251,7 +268,6 @@ onMounted(() => {
   <!-- Search Bar -->
   <div id="map" class="absolute h-screen top-0 overflow-hidden"></div>
 
-  <!-- Search Bar -->
   <div
     class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px] select-none pointer-events-none"
   >

@@ -14,6 +14,8 @@ import cityDataSource from "../data/data.json";
 
 import pointsWithinPolygon from "@turf/points-within-polygon";
 
+import logo from "../imgs/logo.png";
+
 import Barchart from "./Barchart.vue";
 
 import * as turf from "@turf/turf";
@@ -282,7 +284,7 @@ onMounted(() => {
   >
     <div class="flex flex-col justify-around select-none">
       <h2 class="text-slate-900 font-bold text-2xl">
-        <img id="logo-img" src="logo.png" />Project Vibe
+        <img id="logo-img" :src="logo" />Project Vibe
       </h2>
       <div class="relative">
         <div class="flex my-2">

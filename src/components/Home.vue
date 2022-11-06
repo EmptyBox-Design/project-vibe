@@ -299,7 +299,9 @@ onMounted(() => {
     </div>
   </div>
 
-  <div class="absolute flex justify-center w-[100vw] bottom-2 p-2">
+  <div
+    class="absolute flex justify-center w-[100vw] bottom-2 p-2 pointer-events-none"
+  >
     <Barchart class="h-[250px] bg-white w-[100vw]" />
   </div>
 </template>

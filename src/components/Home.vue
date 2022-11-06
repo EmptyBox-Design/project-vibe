@@ -9,9 +9,9 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
-import cityDataSource from "../data/sourceData-light.json";
-// import pointsWithinPolygon from "@turf/points-within-polygon";
+import cityDataSource from "../data/cleanedBusinessData.json";
 
+import pointsWithinPolygon from "@turf/points-within-polygon";
 import * as turf from "@turf/turf";
 
 import { useMainStore } from "../store/main";
@@ -27,14 +27,31 @@ const paintOption = {
   // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
   "circle-color": [
     "match",
-    ["get", "Industry"],
-    "Garage",
-    "#fbb03b",
-    "Tobacco Retail Dealer",
-    "#e55e5e",
-    /* other */ "#091283",
+    ["get", "Business_Type"],
+    "Entertainment",
+    "#f94144",
+    "Business",
+    "#f3722c",
+    "Convenience Stores",
+    "#f8961e",
+    "Retail",
+    "#f9844a",
+    "Parking",
+    "#f9c74f",
+    "Utilities",
+    "#90be6d",
+    "Cafe",
+    "#43aa8b",
+    "Storage",
+    "#4d908e",
+    "Religious Institution",
+    "#577590",
+    "Laundry",
+    "#277da1",
+    "Food & Restaurants",
+    "#001d3d",
+    /* other */ "#7d8597",
   ],
-  // "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40],
   "circle-radius": {
     base: 1.75,
     stops: [
@@ -66,12 +83,13 @@ function flyTo(coords) {
  * @param {Array} search coordinate array of polygon to search within
  */
 function getPointsWithinPolygon(pts, search) {
-  var points = turf.points(pts);
-
+  // var points = turf.points(pts);
   var searchWithin = turf.polygon(search);
 
-  const ptsWithin = pointsWithinPolygon(points, searchWithin);
+  // const ptsWithin = pointsWithinPolygon(points, searchWithin);
 
+  const ptsWithin = pointsWithinPolygon(pts, searchWithin);
+  console.log(ptsWithin);
   return ptsWithin;
 }
 
@@ -88,7 +106,7 @@ function resetMapFilter() {
 }
 
 function removeMapMarker() {
-  selectedLocationMarker.remove();
+  if (selectedLocationMarker) selectedLocationMarker.remove();
 }
 
 async function submit() {
@@ -100,6 +118,11 @@ async function submit() {
 
   // SET ISOCHRONE AS POLYGON
   map.getSource("iso").setData(isochroneResponse);
+
+  const queriedPoints = getPointsWithinPolygon(cityDataSource, [
+    isochroneResponse["features"][0]["geometry"]["coordinates"],
+  ]);
+  map.getSource("cityData").setData(queriedPoints);
 }
 
 function addGeocoder() {
@@ -114,7 +137,7 @@ function addGeocoder() {
   geocoder.on("result", (event) => {
     if (store.selectedCoords.length > 0) {
       resetMapFilter();
-      removeMapMarker();
+      if (selectedLocationMarker) removeMapMarker();
     }
     store.selectedCoords = event.result.center;
     addMapMarker(store.selectedCoords);
@@ -123,11 +146,11 @@ function addGeocoder() {
   });
   geocoder.on("clear", () => {
     resetMapFilter();
-    removeMapMarker();
+    if (selectedLocationMarker) removeMapMarker();
   });
   geocoder.on("error", () => {
     resetMapFilter();
-    removeMapMarker();
+    if (selectedLocationMarker) removeMapMarker();
   });
 
   geocoder.addTo("#search-container");
@@ -185,12 +208,22 @@ onMounted(() => {
     map.on("click", "businesses", (e) => {
       // Copy coordinates array.
       const coordinates = e.features[0].geometry.coordinates.slice();
-      const descriptionRoot = e.features[0];
+      const descriptionRoot = e.features[0]["properties"];
+      const businessName = descriptionRoot["Business Name"]
+        ? `<h1><b>${descriptionRoot["Business Name"]}</b></h1>`
+        : "N/A";
+      const businessName2 = descriptionRoot["Business Name 2"]
+        ? `<h1>${descriptionRoot["Business Name 2"]}</h1>`
+        : "";
+      const businessContact = descriptionRoot["Contact Phone Number"]
+        ? `<span>📞 ${descriptionRoot["Contact Phone Number"]}</span>`
+        : "";
+
       coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
 
       new mapboxgl.Popup()
         .setLngLat(coordinates)
-        .setHTML(description)
+        .setHTML(businessName + businessName2 + businessContact)
         .addTo(map);
     });
     // Change the cursor to a pointer when the mouse is over the places layer.

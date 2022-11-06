@@ -11,7 +11,8 @@ import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
 import cityDataSource from "../data/sourceData-light.json";
-// import pointsWithinPolygon from "@turf/points-within-polygon";
+
+import pointsWithinPolygon from "@turf/points-within-polygon";
 
 import * as turf from "@turf/turf";
 
@@ -20,8 +21,6 @@ const store = useMainStore();
 
 // GLOBALS
 let map = null;
-// SELECTED COORDS FROM GEOCODER
-let selectedCoords = [];
 // MARKER CONTAINER
 let selectedLocationMarker = {};
 
@@ -87,7 +86,7 @@ function addMapMarker(coords) {
 }
 
 function resetMapFilter() {
-  selectedCoords = [];
+  store.selectedCoords = [];
 }
 
 function removeMapMarker() {
@@ -95,10 +94,14 @@ function removeMapMarker() {
 }
 
 async function submit() {
-  const coords = [-73.991381456669, 40.74592118535034];
-  const testCallback = await store.CallIsochrone(coords, 10);
-  console.log(testCallback);
-  map.getSource("iso").setData(testCallback);
+  const distance = 10;
+  const isochroneResponse = await store.CallIsochrone(
+    store.selectedCoords,
+    distance
+  );
+
+  // SET ISOCHRONE AS POLYGON
+  map.getSource("iso").setData(isochroneResponse);
 }
 
 function addGeocoder() {
@@ -111,13 +114,14 @@ function addGeocoder() {
    * GEOCODER EVENT HANDLERS
    */
   geocoder.on("result", (event) => {
-    if (selectedCoords.length > 0) {
+    if (store.selectedCoords.length > 0) {
       resetMapFilter();
       removeMapMarker();
     }
-    selectedCoords = event.result.center;
-    addMapMarker(selectedCoords);
-    flyTo(selectedCoords);
+    store.selectedCoords = event.result.center;
+    addMapMarker(store.selectedCoords);
+    flyTo(store.selectedCoords);
+    submit();
   });
   geocoder.on("clear", () => {
     resetMapFilter();
@@ -204,6 +208,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <!-- Search Bar -->
   <div id="map" class="absolute h-screen top-0 overflow-hidden"></div>
 
   <!-- Search Bar -->
@@ -213,6 +218,11 @@ onMounted(() => {
     <div class="flex flex-col justify-around">
       <div id="search-container" class="grow dark:bg-gray-800"></div>
       <UIButton></UIButton>
+    <h2 class="text-slate-900 font-bold text-2xl">Project Vibe</h2>
+    <div class="relative">
+      <div class="flex my-2">
+        <div id="search-container" class="grow dark:bg-gray-800"></div>
+      </div>
     </div>
   </div>
 </template>

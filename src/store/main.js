@@ -4,6 +4,7 @@ export const useMainStore = defineStore("main", {
   state: () => ({
     isochrone: [],
     distance: 5,
+    selectedCoords: [],
   }),
   getters: {},
   actions: {

@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted } from "vue";
-import UIButton from './UIButton.vue'
+import UIButton from "./UIButton.vue";
 
 // MAPBOX
 import mapboxgl from "mapbox-gl";
@@ -210,11 +210,11 @@ onMounted(() => {
   <div
     class="absolute navbar-height top-0 left-0 md:left-8 lg:left-8 w-full md:w-[50vw] lg:w-[50vw] p-4 rounded-lg max-h-[700px]"
   >
-    <div class="flex__container">
+    <div class="flex flex-col justify-around">
       <div id="search-container" class="grow dark:bg-gray-800"></div>
       <UIButton></UIButton>
-      </div>
     </div>
+  </div>
 </template>
 
 <style>
@@ -239,11 +239,5 @@ onMounted(() => {
 }
 .mapboxgl-popup-content {
   color: black !important;
-}
-
-.flex__container{
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
 }
 </style>

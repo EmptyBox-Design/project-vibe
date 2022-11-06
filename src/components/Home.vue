@@ -14,6 +14,8 @@ import cityDataSource from "../data/sourceData-light.json";
 
 import pointsWithinPolygon from "@turf/points-within-polygon";
 
+import Barchart from "./Barchart.vue"
+
 import * as turf from "@turf/turf";
 
 import { useMainStore } from "../store/main";
@@ -225,6 +227,11 @@ onMounted(() => {
       </div>
     </div>
   </div>
+
+  <div class="absolute flex justify-center w-[100vw] bottom-2 p-2">
+
+    <Barchart class="h-[230px] bg-white" />
+  </div>
 </template>
 
 <style>
@@ -235,18 +242,22 @@ onMounted(() => {
   border-bottom-right-radius: 0px;
   border-top-right-radius: 0px;
 }
+
 .mapboxgl-ctrl-geocoder,
 .mapboxgl-ctrl-geocoder--icon,
 .mapboxgl-ctrl-geocoder--input {
   height: 100%;
 }
+
 .mapboxgl-ctrl-geocoder--icon {
   top: -1px;
 }
+
 .mapboxgl-popup {
   max-width: 400px;
   font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
 }
+
 .mapboxgl-popup-content {
   color: black !important;
 }

@@ -73,6 +73,16 @@ function flyTo(coords) {
   });
 }
 function updateBarChart(queriedPoints) {
+  store.barData = {
+    Entertainment: 0,
+    Business: 0,
+    "Convenience Stores": 0,
+    Retail: 0,
+    Parking: 0,
+    "Food & Restaurants": 0,
+    "Religious Institution": 0,
+  };
+
   queriedPoints.features.forEach((d) => {
     store.barData[d.properties.Business_Type] += 1;
   });
